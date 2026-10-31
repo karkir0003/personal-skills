@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Universal AI Skills Installer & Registry
-# Dynamically installs skills into detected AI agents on your machine.
-# Does NOT create directories for tools you don't have installed.
+# Defaults to configuring Google Gemini & Antigravity.
+# Use --all, --claude, or --cursor to install for additional models.
+#
 # Usage:
-#   ./install.sh                 (Installs to all detected agents)
+#   ./install.sh                 (Installs for Gemini / Antigravity)
+#   ./install.sh --all           (Installs for all models: Gemini, Claude, Cursor)
+#   ./install.sh --claude        (Installs for Claude Code)
+#   ./install.sh --cursor        (Installs for Cursor / Codex)
 #   ./install.sh --list          (Lists all available skills)
 #   ./install.sh --skill <name>  (Installs only a specific skill)
-#   ./install.sh --all           (Forces installation for all agent formats)
 
 set -e
 
@@ -89,38 +92,40 @@ fi
 
 # Filter specific skill if requested
 TARGET_SKILL=""
-if [ "$1" = "--skill" ] || [ "$1" = "-s" ]; then
-    TARGET_SKILL="$2"
-    if [ -z "$TARGET_SKILL" ] || [ ! -d "$SKILLS_DIR/$TARGET_SKILL" ]; then
-        echo -e "${YELLOW}Skill '$TARGET_SKILL' not found in $SKILLS_DIR${NC}"
-        exit 1
-    fi
-fi
+INSTALL_GEMINI=true
+INSTALL_CLAUDE=false
+INSTALL_CURSOR=false
 
-FORCE_ALL=false
-if [ "$1" = "--all" ]; then
-    FORCE_ALL=true
+for arg in "$@"; do
+    case "$arg" in
+        --all)
+            INSTALL_CLAUDE=true
+            INSTALL_CURSOR=true
+            ;;
+        --claude)
+            INSTALL_CLAUDE=true
+            ;;
+        --cursor)
+            INSTALL_CURSOR=true
+            ;;
+        --gemini)
+            INSTALL_GEMINI=true
+            ;;
+        --skill|-s)
+            TARGET_SKILL="$2"
+            ;;
+    esac
+done
+
+if [ -n "$TARGET_SKILL" ] && [ ! -d "$SKILLS_DIR/$TARGET_SKILL" ]; then
+    echo -e "${YELLOW}Skill '$TARGET_SKILL' not found in $SKILLS_DIR${NC}"
+    exit 1
 fi
 
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${BLUE} Universal AI Skills Installer${NC}"
+echo -e "${BLUE} Personal Skills Installer${NC}"
 echo -e "${BLUE} Source: $SOURCE_DIR${NC}"
 echo -e "${BLUE}====================================================${NC}"
-
-# Detect installed agent environments
-HAS_GEMINI=false
-HAS_CLAUDE=false
-HAS_CURSOR=false
-
-if command -v gemini >/dev/null 2>&1 || [ -d "$HOME/.gemini" ]; then
-    HAS_GEMINI=true
-fi
-if command -v claude >/dev/null 2>&1; then
-    HAS_CLAUDE=true
-fi
-if command -v cursor >/dev/null 2>&1; then
-    HAS_CURSOR=true
-fi
 
 # Generate dynamic markdown index
 parse_skills_py "index"
@@ -141,8 +146,8 @@ link_skills() {
     done
 }
 
-# 1. Google Gemini & Antigravity
-if [ "$HAS_GEMINI" = true ] || [ "$FORCE_ALL" = true ]; then
+# 1. Google Gemini & Antigravity (Default)
+if [ "$INSTALL_GEMINI" = true ]; then
     echo -n "Installing for Gemini & Antigravity... "
     link_skills "$HOME/.gemini/config/skills"
     link_skills "$HOME/.gemini/skills"
@@ -154,8 +159,8 @@ RULE
     echo -e "${GREEN}[OK]${NC}"
 fi
 
-# 2. Anthropic Claude Code (Only if installed or forced)
-if [ "$HAS_CLAUDE" = true ] || [ "$FORCE_ALL" = true ]; then
+# 2. Anthropic Claude Code (Only when requested)
+if [ "$INSTALL_CLAUDE" = true ]; then
     echo -n "Installing for Claude Code... "
     link_skills "$HOME/.claude/skills"
     cat << RULE > "$HOME/.claude/CLAUDE.md"
@@ -166,8 +171,8 @@ RULE
     echo -e "${GREEN}[OK]${NC}"
 fi
 
-# 3. Cursor & Codex (Only if installed or forced)
-if [ "$HAS_CURSOR" = true ] || [ "$FORCE_ALL" = true ]; then
+# 3. Cursor & Codex (Only when requested)
+if [ "$INSTALL_CURSOR" = true ]; then
     echo -n "Installing for Cursor / Codex... "
     link_skills "$HOME/.cursor/rules"
     cat << RULE > "$HOME/.cursorrules"
@@ -179,5 +184,5 @@ RULE
 fi
 
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${GREEN}Installation complete for active agent environments!${NC}"
+echo -e "${GREEN}Installation complete!${NC}"
 echo -e "${BLUE}====================================================${NC}"
