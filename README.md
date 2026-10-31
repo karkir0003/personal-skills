@@ -49,13 +49,33 @@ gemini skills install https://github.com/karkir0003/personal-skills.git --path s
 <details>
 <summary><b>Anthropic Claude Code</b></summary>
 
-- **Install Agent (Native - Recommended)**:
+- **Preferred Native Installation** ([Official Docs](https://code.claude.com/docs/en/setup)):
+  - **macOS, Linux, WSL**:
+    ```bash
+    curl -fsSL https://claude.ai/install.sh | bash
+    ```
+  - **Windows (PowerShell)**:
+    ```powershell
+    irm https://claude.ai/install.ps1 | iex
+    ```
+  - **Windows (CMD)**:
+    ```cmd
+    curl -fsSL https://claude.ai/install.cmd -o install.cmd && install.cmd && del install.cmd
+    ```
+  - *(Optional Package Managers: `brew install --cask claude-code` on macOS, or `winget install Anthropic.ClaudeCode` on Windows).*
+
+- **Verify & Launch**:
   ```bash
-  curl -fsSL https://claude.ai/install.sh | bash
-  # Or via Homebrew: brew install --cask claude-code
+  claude --version   # Verify installation
+  claude             # Start interactive session in your project
   ```
-- **Enable Skills**: `./install.sh --claude`
-- Automatically links to `~/.claude/skills/` and configures global instructions in `~/.claude/CLAUDE.md`.
+  *(Native installations automatically update in the background).*
+
+- **Enable Skills**:
+  ```bash
+  ./install.sh --claude
+  ```
+  Automatically links skills into `~/.claude/skills/` and indexes them in `~/.claude/CLAUDE.md`.
 </details>
 
 <details>
