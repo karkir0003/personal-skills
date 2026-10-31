@@ -24,11 +24,11 @@ This skill defines the standardized architecture, transpilation protocol, testin
 4. **Starter Code Only (Never Solve the Challenge)**:
    - Transpile core data structures, type definitions, method signatures, parameter defaults, and basic input validation 1:1.
    - **DO NOT implement the core business logic, complex constraints, or rule evaluations.** The starter code must remain the exact starting point for the candidate to solve.
-5. **Zero-Friction Testing Frameworks**:
-   - Prefer lightweight, built-in, or single-file test runners requiring **zero third-party package installations** or complex build systems:
+5. **Standardized Testing Frameworks (Zero-Friction Setup)**:
+   - Use standard industry testing frameworks with automated, zero-friction setup scripts:
      - **Python**: Standard library `unittest` (zero install, 100% compatible with `pytest`).
      - **Java**: `JUnit 5` via bundled `junit-platform-console-standalone.jar` in `lib/` (zero Maven/Gradle setup required).
-     - **C++**: `doctest` single-header framework (`include/doctest/doctest.h`) — fast compilation, Catch2-style syntax (`TEST_CASE`, `REQUIRE`, `CHECK`), zero external linking.
+     - **C++**: `Google Test` (auto-provisioned via `setup.sh` via Homebrew / apt) or `doctest` single-header.
      - **JavaScript**: Node.js built-in `assert` module (zero npm packages required).
 6. **Verbatim Documentation**: Copy problem statements, rules, edge cases, ASCII diagrams, and method docstrings verbatim into each language's starter file header.
 7. **Universal `Makefile` Interface**: Every language directory provides the exact same three targets: `make` (run/test), `make setup` (environment check/install), and `make clean`.
@@ -90,13 +90,11 @@ This skill defines the standardized architecture, transpilation protocol, testin
 │   ├── src/<module>/       # Domain classes and enums
 │   └── tests/              # Test<Slug>.java using JUnit 5 (@Test, @BeforeEach)
 └── c++/
-    ├── Makefile            # Compiles include/ & src/ with doctest into test_runner
-    ├── setup.sh            # Validates C++17 compiler; auto-fetches doctest.h if missing
-    ├── include/
-    │   ├── <module>/       # Header files (.hpp)
-    │   └── doctest/        # doctest.h (single-header testing framework)
+    ├── Makefile            # Auto-detects Google Test (brew/pkg-config) and compiles into test_runner
+    ├── setup.sh            # Validates C++17 compiler & auto-provisions Google Test
+    ├── include/<module>/   # Header files (.hpp)
     ├── src/                # Implementation files (.cpp)
-    └── tests/              # test_<slug>.cpp using TEST_CASE, REQUIRE, CHECK
+    └── tests/              # test_<slug>.cpp using Google Test (TEST, EXPECT_EQ, ASSERT_NE)
 ```
 
 ---
@@ -106,9 +104,9 @@ This skill defines the standardized architecture, transpilation protocol, testin
 | Concept | Python | JavaScript (Node.js) | Java (Java 11+) | C++ (C++17) |
 | :--- | :--- | :--- | :--- | :--- |
 | **Naming Convention** | `snake_case.py` | `snake_case.js` | `PascalCase.java` | `snake_case.cpp` |
-| **Testing Framework** | `unittest` (standard library) | Built-in `assert` module | `JUnit 5` (standalone console) | `doctest` (single header) |
-| **Test Assertion** | `self.assertEqual(a, b)` | `assert.strictEqual(a, b)` | `assertEquals(a, b)` | `CHECK(a == b)`, `REQUIRE(p != nullptr)` |
-| **Setup Fixture** | `def setUp(self):` | Per-test setup or helper | `@BeforeEach public void setUp()` | Per-case setup or `TEST_SUITE` |
+| **Testing Framework** | `unittest` (standard library) | Built-in `assert` module | `JUnit 5` (standalone console) | `Google Test` (or `doctest`) |
+| **Test Assertion** | `self.assertEqual(a, b)` | `assert.strictEqual(a, b)` | `assertEquals(a, b)` | `EXPECT_EQ(a, b)`, `ASSERT_NE(p, nullptr)` |
+| **Setup Fixture** | `def setUp(self):` | Per-test setup or helper | `@BeforeEach public void setUp()` | Per-case setup or `TestFixture` |
 | **Enum Types** | `class Status(Enum):` | `const Status = Object.freeze({...})` | `enum Status` | `enum class Status` + `to_string()` |
 | **Data Models** | `class Item:` / `@dataclass` | `class Item { constructor(...) }` | `class Item { private fields... }` | `class Item` / `struct Item` |
 | **Maps / Dicts** | `dict[K, V]` | `Map` or `Object` | `Map<K, V> = new HashMap<>()` | `std::unordered_map<K, V>` |
@@ -120,129 +118,38 @@ This skill defines the standardized architecture, transpilation protocol, testin
 
 ### Critical Multi-Language Rules:
 1. **Single-File Java (Archetype A)**: Declare `public class <ClassName>` as the first class in the file to guarantee JEP 330 execution (`java <ClassName>.java`).
-2. **Modular Java with JUnit 5 (Archetype B)**: Keep `lib/junit-platform-console-standalone-1.10.2.jar` in `java/lib/`. Compile with `javac -cp "lib/*"` and execute with `java -jar lib/junit-platform-console-standalone-*.jar execute --class-path bin --scan-class-path --disable-banner --details=summary`.
-3. **C++ doctest (Archetype B)**: Include `#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN` and `#include "doctest/doctest.h"` in test files. Provide `-Iinclude` in `CXXFLAGS`.
+2. **Modular Java with JUnit 5 (Archetype B)**: Keep `lib/junit-platform-console-standalone-*.jar` in `java/lib/`. Compile with `javac -cp "lib/*"` and execute with `java -jar lib/junit-platform-console-standalone-*.jar execute --class-path bin --scan-class-path --disable-banner --details=summary`.
+3. **C++ Google Test (Archetype B)**: Use `c++/setup.sh` to auto-provision Google Test (`brew install googletest` on macOS or `libgtest-dev` on Linux). In `Makefile`, auto-detect Homebrew prefix or pkg-config to link `-lgtest -lgtest_main -pthread`.
 4. **C++ Enum Overloading**: Overload `operator<<` for any `enum class` so console output strings and test failure logs format cleanly.
 
 ---
 
 ## 4. Standardized Makefile Specifications
 
-### Archetype A: Single-File Makefiles
-
-- **`python/Makefile`**:
-  ```makefile
-  .PHONY: all run setup clean
-  all: run
-  run:
-  	@python3 $(wildcard *.py)
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -rf __pycache__ *.pyc
-  ```
-
-- **`javascript/Makefile`**:
-  ```makefile
-  .PHONY: all run test setup clean
-  all: run
-  run:
-  	@node $(wildcard *.js)
-  test: run
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -rf node_modules
-  ```
-
-- **`java/Makefile`**:
-  ```makefile
-  .PHONY: all run setup clean
-  all: run
-  run:
-  	@java $(wildcard *.java)
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -f *.class
-  ```
-
-- **`c++/Makefile`**:
-  ```makefile
-  CXX ?= $(shell command -v clang++ >/dev/null 2>&1 && echo clang++ || echo g++)
-  CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2
-  SRC = $(wildcard *.cpp)
-  TARGET = $(basename $(SRC))
-  .PHONY: all run build setup clean
-  all: run
-  build: $(TARGET)
-  $(TARGET): $(SRC)
-  	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRC)
-  run: $(TARGET)
-  	@./$(TARGET)
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -f $(TARGET) *.o
-  ```
-
 ### Archetype B: Multi-File / Modular Package Makefiles
 
-- **`python/Makefile`**:
-  ```makefile
-  .PHONY: all run test setup clean
-  all: run
-  run:
-  	@PYTHONPATH=<pkg_dir> python3 -m unittest discover -s <pkg_dir>/tests
-  test: run
-  setup:
-  	@./setup.sh
-  clean:
-  	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-  	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
-  ```
-
-- **`javascript/Makefile`**:
-  ```makefile
-  .PHONY: all run test setup clean
-  all: run
-  run:
-  	@node tests/test_<slug>.js
-  test: run
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -rf node_modules
-  ```
-
-- **`java/Makefile`**:
-  ```makefile
-  JUNIT_JAR = $(wildcard lib/junit-platform-console-standalone-*.jar)
-  .PHONY: all run test setup clean
-  all: run
-  build:
-  	@mkdir -p bin
-  	@javac -cp "$(JUNIT_JAR)" -d bin $$(find src tests -name "*.java")
-  run: build
-  	@java -jar $(JUNIT_JAR) execute --class-path bin --scan-class-path --disable-banner --details=summary
-  test: run
-  setup:
-  	@./setup.sh
-  clean:
-  	@rm -rf bin
-  ```
-
-- **`c++/Makefile`**:
+- **`c++/Makefile` (Google Test)**:
   ```makefile
   CXX ?= $(shell command -v clang++ >/dev/null 2>&1 && echo clang++ || echo g++)
   CXXFLAGS ?= -std=c++17 -Wall -Wextra -O2 -Iinclude
+
+  GTEST_PREFIX ?= $(shell command -v brew >/dev/null 2>&1 && brew --prefix googletest 2>/dev/null)
+  ifneq ($(GTEST_PREFIX),)
+      GTEST_CXXFLAGS = -I$(GTEST_PREFIX)/include
+      GTEST_LDFLAGS = -L$(GTEST_PREFIX)/lib -lgtest -lgtest_main -pthread
+  else
+      GTEST_CXXFLAGS = $(shell pkg-config --cflags gtest_main 2>/dev/null)
+      GTEST_LDFLAGS = $(shell pkg-config --libs gtest_main 2>/dev/null || echo "-lgtest -lgtest_main -pthread")
+  endif
+
   SRCS = $(wildcard src/*.cpp) tests/test_<slug>.cpp
   TARGET = test_runner
+
   .PHONY: all run build test setup clean
   all: run
   build: $(TARGET)
   $(TARGET): $(SRCS)
-  	@$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS)
+  	@$(CXX) $(CXXFLAGS) $(GTEST_CXXFLAGS) -o $(TARGET) $(SRCS) $(GTEST_LDFLAGS)
   run: build
   	@./$(TARGET)
   test: run
@@ -258,20 +165,16 @@ This skill defines the standardized architecture, transpilation protocol, testin
 
 Every language directory must provide a self-contained, idempotent `setup.sh` that validates runtimes and auto-provisions dependencies:
 
-### Java Setup (`java/setup.sh`)
-1. Checks `command -v java` and `command -v javac`.
-2. If missing on macOS:
-   - Detects architecture (`aarch64` vs `x64`).
-   - Downloads Amazon Corretto 21 tarball directly from AWS (`corretto.aws`).
-   - Extracts to `~/.corretto/` and symlinks binaries to `~/.local/bin/`.
-3. If on Debian/Ubuntu: `sudo apt-get update && sudo apt-get install -y default-jdk`.
-4. In Multi-File / JUnit projects: auto-downloads `junit-platform-console-standalone-1.10.2.jar` into `lib/` if missing.
-5. Verifies test execution via `make`.
-
 ### C++ Setup (`c++/setup.sh`)
 1. Detects `clang++` or `g++` supporting C++17.
-2. In Multi-File projects: auto-downloads `doctest.h` from GitHub into `include/doctest/` if missing.
+2. Auto-provisions Google Test via `brew install googletest` (macOS) or `libgtest-dev` (Linux).
 3. Tests compilation and runs `make && make clean`.
+
+### Java Setup (`java/setup.sh`)
+1. Checks `command -v java` and `command -v javac`.
+2. If missing on macOS: auto-provisions Amazon Corretto 21 without sudo.
+3. In Multi-File / JUnit projects: auto-downloads `junit-platform-console-standalone-1.10.2.jar` into `lib/` if missing.
+4. Verifies test execution via `make`.
 
 ### Python Setup (`python/setup.sh`)
 1. Validates `python3 >= 3.8`.
@@ -284,8 +187,6 @@ Every language directory must provide a self-contained, idempotent `setup.sh` th
 ---
 
 ## 6. Minimal & Essential `.gitignore`
-
-Always generate a focused `.gitignore` containing essentials and preserving standalone test runner JARs:
 
 ```gitignore
 # OS & Editor files
@@ -340,8 +241,6 @@ yarn-error.log*
 
 ## 7. Universal Candidate-Facing `README.md` Template
 
-Always use this standardized template for the repository root `README.md`:
-
 ```markdown
 # <Problem Title> - AI Assisted Design
 
@@ -354,7 +253,7 @@ Welcome to the **<Problem Title>** design round!
    cd python        # For Python (unittest)
    cd javascript    # For JavaScript (Node.js)
    cd java          # For Java (JUnit 5)
-   cd c++           # For C++ (doctest)
+   cd c++           # For C++ (Google Test)
    ```
 
 2. **Verify / install environment** (optional):
@@ -383,7 +282,7 @@ Welcome to the **<Problem Title>** design round!
 | **Python** | `python/` | `unittest` (standard library, zero install) | [`python/...`](python/) | [`python/.../test_...py`](python/) |
 | **JavaScript** | `javascript/` | Built-in Node assertions (zero dependencies) | [`javascript/...`](javascript/) | [`javascript/.../test_....js`](javascript/) |
 | **Java** | `java/` | `JUnit 5` (bundled standalone runner) | [`java/src/...`](java/src/) | [`java/tests/Test....java`](java/tests/) |
-| **C++** | `c++/` | `doctest` (single-header, zero install) | [`c++/include/...`](c++/include/) | [`c++/tests/test_....cpp`](c++/tests/) |
+| **C++** | `c++/` | `Google Test` (auto-provisioned via setup.sh) | [`c++/include/...`](c++/include/) | [`c++/tests/test_....cpp`](c++/tests/) |
 
 Every language directory contains a standardized `Makefile` with identical targets (`make`, `make setup`, `make clean`) so your workflow is consistent regardless of which language you choose.
 ```
