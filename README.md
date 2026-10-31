@@ -49,7 +49,11 @@ gemini skills install https://github.com/karkir0003/personal-skills.git --path s
 <details>
 <summary><b>Anthropic Claude Code</b></summary>
 
-- **Install Agent**: `npm install -g @anthropic-ai/claude-code`
+- **Install Agent (Native - Recommended)**:
+  ```bash
+  curl -fsSL https://claude.ai/install.sh | bash
+  # Or via Homebrew: brew install --cask claude-code
+  ```
 - **Enable Skills**: `./install.sh --claude`
 - Automatically links to `~/.claude/skills/` and configures global instructions in `~/.claude/CLAUDE.md`.
 </details>
