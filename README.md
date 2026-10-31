@@ -1,29 +1,35 @@
 # Personal Skills
 
-Personal Skills collection for Google Antigravity & Gemini CLI (`gemini`).
+Personal Skills collection for AI coding assistants: **Google Gemini / Antigravity**, **Anthropic Claude Code**, and **OpenAI Codex / Cursor**.
 
-## Installation via Gemini CLI
+## ⚡ Universal One-Command Setup
 
-To install the `ai-interview-problem-setup` skill globally into **Gemini CLI**:
+To link all personal skills across all AI models on this machine:
+
+```bash
+./install.sh
+```
+
+### How It Works
+- **Symlinked in Real-Time**: `install.sh` creates symbolic links into each model's configuration directory. Any edits or additions you make in `skills/` are **immediately reflected across all models** without needing to reinstall.
+- **Gemini & Antigravity**: Configures `~/.gemini/config/skills/`, `~/.gemini/skills/`, and `~/.gemini/config/GEMINI.md`.
+- **Claude Code**: Configures `~/.claude/skills/` and global instructions in `~/.claude/CLAUDE.md`.
+- **Cursor & Codex**: Configures `~/.cursor/rules/` and global rules in `~/.cursorrules`.
+- **Universal Fallback**: Links to `~/.config/ai-skills/`.
+
+---
+
+## 📦 Installing on Remote Machines (Gemini CLI)
+
+If you are on a new machine with `gemini` CLI installed, install directly from GitHub:
 
 ```bash
 gemini skills install https://github.com/karkir0003/personal-skills.git --path skills/ai-interview-problem-setup
 ```
 
-Or to link it directly from your local repository so updates are reflected immediately:
-
-```bash
-gemini skills link ~/Desktop/personal-skills/skills/ai-interview-problem-setup --scope user --consent
-```
-
-Verify with:
-```bash
-gemini skills list
-```
-
 ---
 
-## Available Skills
+## 🛠️ Available Skills
 
 ### [`ai-interview-problem-setup`](skills/ai-interview-problem-setup/SKILL.md)
 Universal workflow and architecture for scaffolding multi-language (Python, JavaScript, Java, C++) AI-assisted interview and system design coding challenge repositories:
