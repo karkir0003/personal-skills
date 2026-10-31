@@ -7,7 +7,8 @@
 #   ./install.sh                 (Installs for Gemini / Antigravity)
 #   ./install.sh --all           (Installs for all models: Gemini, Claude, Cursor)
 #   ./install.sh --claude        (Installs for Claude Code)
-#   ./install.sh --cursor        (Installs for Cursor / Codex)
+#   ./install.sh --cursor        (Installs for Cursor IDE)
+#   ./install.sh --agents        (Installs for Universal Codex / Copilot Agent Standard)
 #   ./install.sh --list          (Lists all available skills)
 #   ./install.sh --skill <name>  (Installs only a specific skill)
 
@@ -95,18 +96,23 @@ TARGET_SKILL=""
 INSTALL_GEMINI=true
 INSTALL_CLAUDE=false
 INSTALL_CURSOR=false
+INSTALL_AGENTS=false
 
 for arg in "$@"; do
     case "$arg" in
         --all)
             INSTALL_CLAUDE=true
             INSTALL_CURSOR=true
+            INSTALL_AGENTS=true
             ;;
         --claude)
             INSTALL_CLAUDE=true
             ;;
         --cursor)
             INSTALL_CURSOR=true
+            ;;
+        --agents|--copilot)
+            INSTALL_AGENTS=true
             ;;
         --gemini)
             INSTALL_GEMINI=true
@@ -171,15 +177,22 @@ RULE
     echo -e "${GREEN}[OK]${NC}"
 fi
 
-# 3. Cursor & Codex (Only when requested)
+# 3. Cursor IDE (Only when requested)
 if [ "$INSTALL_CURSOR" = true ]; then
-    echo -n "Installing for Cursor / Codex... "
+    echo -n "Installing for Cursor IDE... "
     link_skills "$HOME/.cursor/rules"
     cat << RULE > "$HOME/.cursorrules"
 $SKILLS_INDEX
 
 When the task matches any of the skills above, follow the guidelines in \`~/.cursor/rules/<skill_name>/SKILL.md\`.
 RULE
+    echo -e "${GREEN}[OK]${NC}"
+fi
+
+# 4. Universal / Codex / Copilot Agent Standard (Only when requested)
+if [ "$INSTALL_AGENTS" = true ]; then
+    echo -n "Installing for Universal Agent Standard (~/.agents/skills)... "
+    link_skills "$HOME/.agents/skills"
     echo -e "${GREEN}[OK]${NC}"
 fi
 

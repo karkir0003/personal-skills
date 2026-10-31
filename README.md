@@ -1,6 +1,6 @@
 # Personal Skills for AI Agents
 
-A curated collection of specialized skills, workflows, and prompts for AI coding agents (**Google Gemini**, **Claude Code**, and **Cursor / Codex**).
+A curated collection of specialized skills, workflows, and prompts for AI coding agents (**Google Gemini CLI & Antigravity**, **Claude Code**, **Cursor IDE**, and the **Universal Agent Standard / Codex**).
 
 ---
 
@@ -39,7 +39,7 @@ gemini skills install https://github.com/karkir0003/personal-skills.git --path s
 ## 🤖 Supported Agents
 
 <details open>
-<summary><b>Google Gemini & Antigravity (Default)</b></summary>
+<summary><b>Google Gemini CLI & Antigravity (Default)</b></summary>
 
 - **Antigravity IDE**: Global skills auto-discovered from `~/.gemini/config/skills/`.
 - **Gemini CLI**: Automatically linked into `~/.gemini/skills/`.
@@ -55,11 +55,19 @@ gemini skills install https://github.com/karkir0003/personal-skills.git --path s
 </details>
 
 <details>
-<summary><b>Cursor & OpenAI Codex</b></summary>
+<summary><b>Cursor IDE</b></summary>
 
 - **Install Agent**: `brew install --cask cursor`
 - **Enable Skills**: `./install.sh --cursor`
 - Automatically links to `~/.cursor/rules/` and configures global rules in `~/.cursorrules`.
+</details>
+
+<details>
+<summary><b>Universal Agent Standard (Codex / Copilot / AGENTS.md)</b></summary>
+
+- **Specification**: Agent Skills open standard (`SKILL.md` with YAML frontmatter).
+- **Enable Skills**: `./install.sh --agents`
+- Automatically links to `~/.agents/skills/` (the native standard path for Codex and portable agents).
 </details>
 
 ---
