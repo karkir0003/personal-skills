@@ -1,35 +1,67 @@
 #!/usr/bin/env bash
 # Universal AI Skills Installer
-# Seamlessly configures Gemini (Antigravity & Gemini CLI), Claude (Claude Code), and Codex (Cursor / OpenAI).
-# Uses symlinks so updates in personal-skills are immediately live across all models.
+# Works locally or via one-liner: curl -fsSL https://raw.githubusercontent.com/karkir0003/personal-skills/main/install.sh | bash
+# Detects and configures any installed AI agent (Gemini, Claude Code, Cursor, Copilot, Universal)
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SKILLS_DIR="$SCRIPT_DIR/skills"
-
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
-echo -e "${BLUE}==============================================${NC}"
+REPO_URL="https://github.com/karkir0003/personal-skills.git"
+
+# Determine source directory (local clone or clone into ~/.personal-skills)
+if [ -d "./skills" ] && [ -f "./install.sh" ]; then
+    SOURCE_DIR="$(pwd)"
+else
+    INSTALL_CACHE="$HOME/.personal-skills"
+    echo -e "${BLUE}Downloading personal-skills repository to $INSTALL_CACHE...${NC}"
+    if [ -d "$INSTALL_CACHE/.git" ]; then
+        git -C "$INSTALL_CACHE" pull --quiet origin main || true
+    else
+        rm -rf "$INSTALL_CACHE"
+        git clone --quiet "$REPO_URL" "$INSTALL_CACHE"
+    fi
+    SOURCE_DIR="$INSTALL_CACHE"
+fi
+
+SKILLS_DIR="$SOURCE_DIR/skills"
+
+echo -e "${BLUE}====================================================${NC}"
 echo -e "${BLUE} Universal AI Skills Installer${NC}"
-echo -e "${BLUE} (Gemini, Claude, Codex, Cursor)${NC}"
-echo -e "${BLUE}==============================================${NC}"
+echo -e "${BLUE} Source: $SOURCE_DIR${NC}"
+echo -e "${BLUE}====================================================${NC}"
+
+# Detect available environments
+HAS_GEMINI=false
+HAS_CLAUDE=false
+HAS_CURSOR=false
+
+if command -v gemini >/dev/null 2>&1 || [ -d "$HOME/.gemini" ]; then
+    HAS_GEMINI=true
+fi
+if command -v claude >/dev/null 2>&1 || [ -d "$HOME/.claude" ]; then
+    HAS_CLAUDE=true
+fi
+if [ -d "$HOME/.cursor" ] || [ -f "$HOME/.cursorrules" ]; then
+    HAS_CURSOR=true
+fi
 
 # 1. Google Gemini & Antigravity
-echo -n "Configuring Gemini & Antigravity... "
-mkdir -p "$HOME/.gemini/config/skills"
-mkdir -p "$HOME/.gemini/skills"
-for skill in "$SKILLS_DIR"/*; do
-    if [ -d "$skill" ]; then
-        skill_name="$(basename "$skill")"
-        ln -sfn "$skill" "$HOME/.gemini/config/skills/$skill_name"
-        ln -sfn "$skill" "$HOME/.gemini/skills/$skill_name"
-    fi
-done
-
-cat << 'RULE' > "$HOME/.gemini/config/GEMINI.md"
+if [ "$HAS_GEMINI" = true ] || [ "$1" = "--all" ]; then
+    echo -n "Configuring for Gemini & Antigravity... "
+    mkdir -p "$HOME/.gemini/config/skills"
+    mkdir -p "$HOME/.gemini/skills"
+    for skill in "$SKILLS_DIR"/*; do
+        if [ -d "$skill" ]; then
+            name="$(basename "$skill")"
+            ln -sfn "$skill" "$HOME/.gemini/config/skills/$name"
+            ln -sfn "$skill" "$HOME/.gemini/skills/$name"
+        fi
+    done
+    cat << 'RULE' > "$HOME/.gemini/config/GEMINI.md"
 # Global Rules: AI-Assisted Interview Repositories
 
 Whenever creating, transpiling, or scaffolding AI-assisted interview or design coding challenge repositories (multi-language Python, JavaScript, Java, C++):
@@ -40,19 +72,22 @@ Whenever creating, transpiling, or scaffolding AI-assisted interview or design c
 5. **Standard Makefiles**: Put identical `Makefile` in each language directory (`make` to run, `make setup`, `make clean`).
 6. **Zero-Sudo Java Setup**: Auto-provision Amazon Corretto 21 JDK locally without password prompts.
 RULE
-echo -e "${GREEN}[OK]${NC}"
+    echo -e "${GREEN}[INSTALLED]${NC}"
+else
+    echo -e "Gemini environment not detected ${YELLOW}[SKIPPED]${NC}"
+fi
 
-# 2. Claude Code (Anthropic)
-echo -n "Configuring Claude Code... "
-mkdir -p "$HOME/.claude/skills"
-for skill in "$SKILLS_DIR"/*; do
-    if [ -d "$skill" ]; then
-        skill_name="$(basename "$skill")"
-        ln -sfn "$skill" "$HOME/.claude/skills/$skill_name"
-    fi
-done
-
-cat << 'RULE' > "$HOME/.claude/CLAUDE.md"
+# 2. Anthropic Claude Code
+if [ "$HAS_CLAUDE" = true ] || [ "$1" = "--all" ]; then
+    echo -n "Configuring for Claude Code... "
+    mkdir -p "$HOME/.claude/skills"
+    for skill in "$SKILLS_DIR"/*; do
+        if [ -d "$skill" ]; then
+            name="$(basename "$skill")"
+            ln -sfn "$skill" "$HOME/.claude/skills/$name"
+        fi
+    done
+    cat << 'RULE' > "$HOME/.claude/CLAUDE.md"
 # Global User Instructions & Skills
 
 You have access to specialized user skills installed in `~/.claude/skills/`:
@@ -66,19 +101,22 @@ You have access to specialized user skills installed in `~/.claude/skills/`:
   - Keep root clean (no root run scripts).
   - Only write starter code with 1:1 types and docstrings—never implement the problem rules.
 RULE
-echo -e "${GREEN}[OK]${NC}"
+    echo -e "${GREEN}[INSTALLED]${NC}"
+else
+    echo -e "Claude Code not detected ${YELLOW}[SKIPPED]${NC}"
+fi
 
 # 3. Cursor & Codex
-echo -n "Configuring Cursor / Codex... "
-mkdir -p "$HOME/.cursor/rules"
-for skill in "$SKILLS_DIR"/*; do
-    if [ -d "$skill" ]; then
-        skill_name="$(basename "$skill")"
-        ln -sfn "$skill" "$HOME/.cursor/rules/$skill_name"
-    fi
-done
-
-cat << 'RULE' > "$HOME/.cursorrules"
+if [ "$HAS_CURSOR" = true ] || [ "$1" = "--all" ]; then
+    echo -n "Configuring for Cursor / Codex... "
+    mkdir -p "$HOME/.cursor/rules"
+    for skill in "$SKILLS_DIR"/*; do
+        if [ -d "$skill" ]; then
+            name="$(basename "$skill")"
+            ln -sfn "$skill" "$HOME/.cursor/rules/$name"
+        fi
+    done
+    cat << 'RULE' > "$HOME/.cursorrules"
 # Global Cursor & Codex Rules
 
 When creating, transpiling, or scaffolding AI-assisted interview coding challenges (Python, JavaScript, Java, C++):
@@ -88,20 +126,22 @@ When creating, transpiling, or scaffolding AI-assisted interview coding challeng
 - Keep repository root clean without runnable scripts.
 - Starter code only: transpile method signatures and types 1:1 with matching docstrings; do not implement solutions.
 RULE
-echo -e "${GREEN}[OK]${NC}"
+    echo -e "${GREEN}[INSTALLED]${NC}"
+else
+    echo -e "Cursor / Codex not detected ${YELLOW}[SKIPPED]${NC}"
+fi
 
-# 4. Universal Fallback (~/.config/ai-skills)
-echo -n "Configuring Universal Fallback (~/.config/ai-skills)... "
+# 4. Universal Fallback (~/.config/ai-skills) - Always created
+echo -n "Configuring Universal Skills Registry (~/.config/ai-skills)... "
 mkdir -p "$HOME/.config/ai-skills"
 for skill in "$SKILLS_DIR"/*; do
     if [ -d "$skill" ]; then
-        skill_name="$(basename "$skill")"
-        ln -sfn "$skill" "$HOME/.config/ai-skills/$skill_name"
+        name="$(basename "$skill")"
+        ln -sfn "$skill" "$HOME/.config/ai-skills/$name"
     fi
 done
-echo -e "${GREEN}[OK]${NC}"
+echo -e "${GREEN}[INSTALLED]${NC}"
 
-echo -e "${GREEN}==============================================${NC}"
-echo -e "${GREEN} All models successfully linked!${NC}"
-echo -e "${GREEN} Edits in $SKILLS_DIR are live immediately.${NC}"
-echo -e "${GREEN}==============================================${NC}"
+echo -e "${BLUE}====================================================${NC}"
+echo -e "${GREEN}Setup complete! Skills are active for detected agents.${NC}"
+echo -e "${BLUE}====================================================${NC}"
