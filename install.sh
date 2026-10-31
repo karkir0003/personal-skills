@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Universal AI Skills Installer & Registry
-# Dynamically discovers ALL skills in skills/* and configures any installed AI agent (Gemini, Claude, Cursor, Codex).
+# Dynamically installs skills into detected AI agents on your machine.
+# Does NOT create directories for tools you don't have installed.
 # Usage:
-#   ./install.sh                 (Installs/links all skills)
+#   ./install.sh                 (Installs to all detected agents)
 #   ./install.sh --list          (Lists all available skills)
 #   ./install.sh --skill <name>  (Installs only a specific skill)
+#   ./install.sh --all           (Forces installation for all agent formats)
 
 set -e
 
@@ -95,6 +97,11 @@ if [ "$1" = "--skill" ] || [ "$1" = "-s" ]; then
     fi
 fi
 
+FORCE_ALL=false
+if [ "$1" = "--all" ]; then
+    FORCE_ALL=true
+fi
+
 echo -e "${BLUE}====================================================${NC}"
 echo -e "${BLUE} Universal AI Skills Installer${NC}"
 echo -e "${BLUE} Source: $SOURCE_DIR${NC}"
@@ -108,10 +115,10 @@ HAS_CURSOR=false
 if command -v gemini >/dev/null 2>&1 || [ -d "$HOME/.gemini" ]; then
     HAS_GEMINI=true
 fi
-if command -v claude >/dev/null 2>&1 || [ -d "$HOME/.claude" ]; then
+if command -v claude >/dev/null 2>&1; then
     HAS_CLAUDE=true
 fi
-if [ -d "$HOME/.cursor" ] || [ -f "$HOME/.cursorrules" ]; then
+if command -v cursor >/dev/null 2>&1; then
     HAS_CURSOR=true
 fi
 
@@ -135,7 +142,7 @@ link_skills() {
 }
 
 # 1. Google Gemini & Antigravity
-if [ "$HAS_GEMINI" = true ] || [ "$1" = "--all" ]; then
+if [ "$HAS_GEMINI" = true ] || [ "$FORCE_ALL" = true ]; then
     echo -n "Installing for Gemini & Antigravity... "
     link_skills "$HOME/.gemini/config/skills"
     link_skills "$HOME/.gemini/skills"
@@ -145,12 +152,10 @@ $SKILLS_INDEX
 When the user's task matches any of the skills listed above, activate and follow the corresponding skill instructions from \`~/.gemini/config/skills/<skill_name>/SKILL.md\`.
 RULE
     echo -e "${GREEN}[OK]${NC}"
-else
-    echo -e "Gemini environment not detected ${YELLOW}[SKIPPED]${NC}"
 fi
 
-# 2. Anthropic Claude Code
-if [ "$HAS_CLAUDE" = true ] || [ "$1" = "--all" ]; then
+# 2. Anthropic Claude Code (Only if installed or forced)
+if [ "$HAS_CLAUDE" = true ] || [ "$FORCE_ALL" = true ]; then
     echo -n "Installing for Claude Code... "
     link_skills "$HOME/.claude/skills"
     cat << RULE > "$HOME/.claude/CLAUDE.md"
@@ -159,12 +164,10 @@ $SKILLS_INDEX
 When the user's request matches any of the skills above, review and follow the skill instructions located in \`~/.claude/skills/<skill_name>/SKILL.md\`.
 RULE
     echo -e "${GREEN}[OK]${NC}"
-else
-    echo -e "Claude Code not detected ${YELLOW}[SKIPPED]${NC}"
 fi
 
-# 3. Cursor & Codex
-if [ "$HAS_CURSOR" = true ] || [ "$1" = "--all" ]; then
+# 3. Cursor & Codex (Only if installed or forced)
+if [ "$HAS_CURSOR" = true ] || [ "$FORCE_ALL" = true ]; then
     echo -n "Installing for Cursor / Codex... "
     link_skills "$HOME/.cursor/rules"
     cat << RULE > "$HOME/.cursorrules"
@@ -173,16 +176,8 @@ $SKILLS_INDEX
 When the task matches any of the skills above, follow the guidelines in \`~/.cursor/rules/<skill_name>/SKILL.md\`.
 RULE
     echo -e "${GREEN}[OK]${NC}"
-else
-    echo -e "Cursor / Codex not detected ${YELLOW}[SKIPPED]${NC}"
 fi
 
-# 4. Universal Fallback Registry (~/.config/ai-skills)
-echo -n "Installing for Universal Registry (~/.config/ai-skills)... "
-link_skills "$HOME/.config/ai-skills"
-echo -e "${GREEN}[OK]${NC}"
-
 echo -e "${BLUE}====================================================${NC}"
-echo -e "${GREEN}All skills installed!${NC}"
-echo -e "Any future additions to ${BOLD}skills/<new-skill>/${NC} will be automatically recognized."
+echo -e "${GREEN}Installation complete for active agent environments!${NC}"
 echo -e "${BLUE}====================================================${NC}"
